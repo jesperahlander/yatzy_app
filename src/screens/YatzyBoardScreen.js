@@ -10,7 +10,6 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   Modal,
-  TouchableHighlight,
   Image,
 } from "react-native";
 import backButtonStyle from "../styles/backButtonStyle";
@@ -106,15 +105,16 @@ const YatzyBoardScreen = ({ navigation }) => {
       const newBoard = [...board];
       newBoard[rowIndex + 1][cellIndex + startColumn + 1] = score;
 
-      // Calculate the sum
-      let sum = 0;
-      for (let i = 1; i <= 6; i++) {
-        const value = parseInt(newBoard[i][cellIndex + startColumn + 1]);
-        if (!isNaN(value)) {
-          sum += value;
-        }
-      }
+      // Calculate Sum
+      const sum = calculateSum(newBoard, cellIndex);
       newBoard[7][cellIndex + startColumn + 1] = sum;
+
+      // Calculate Bonus
+      calculateBonus(newBoard, cellIndex);
+
+      // Calculate Total
+      const total = calculateTotal(newBoard, cellIndex);
+      newBoard[18][cellIndex + startColumn + 1] = total;
 
       setBoard(newBoard);
       Keyboard.dismiss();
@@ -122,6 +122,72 @@ const YatzyBoardScreen = ({ navigation }) => {
       setTimeout(() => {
         setModalVisible(false);
       }, 200);
+    }
+  };
+
+  const clearCell = (rowIndex, cellIndex) => {
+    const newBoard = [...board];
+    newBoard[rowIndex + 1][cellIndex + startColumn + 1] = "";
+    setBoard(newBoard);
+  };
+
+  const calculateTotal = (newBoard, cellIndex) => {
+    let sum = 0;
+    for (let i = 7; i <= 17; i++) {
+      const value = parseInt(newBoard[i][cellIndex + startColumn + 1]);
+      if (!isNaN(value) && value !== "-") {
+        sum += value;
+      }
+    }
+    return sum;
+  };
+
+  const calculateSum = (newBoard, cellIndex) => {
+    let sum = 0;
+    for (let i = 1; i <= 6; i++) {
+      const value = parseInt(newBoard[i][cellIndex + startColumn + 1]);
+      if (!isNaN(value)) {
+        sum += value;
+      }
+    }
+    return sum;
+  };
+
+  const calculateBonus = (newBoard, cellIndex) => {
+    let bonus = 0;
+    let filledCells = 0;
+    let sum = 0;
+    for (let i = 1; i <= 6; i++) {
+      const value = parseInt(newBoard[i][cellIndex + startColumn + 1]);
+      if (!isNaN(value)) {
+        sum += value;
+        filledCells++;
+      }
+    }
+    if (filledCells === 6) {
+      bonus = sum >= 63 ? 50 : 0;
+    } else {
+      bonus = "-";
+    }
+    newBoard[8][cellIndex + startColumn + 1] = bonus;
+  };
+
+  const getDieValue = (dieName) => {
+    switch (dieName) {
+      case "Ones":
+        return 1;
+      case "Twos":
+        return 2;
+      case "Threes":
+        return 3;
+      case "Fours":
+        return 4;
+      case "Fives":
+        return 5;
+      case "Sixes":
+        return 6;
+      default:
+        return 0;
     }
   };
 
@@ -153,8 +219,172 @@ const YatzyBoardScreen = ({ navigation }) => {
             />
           </View>
         );
+      case "1 pair":
       case "3 of a kind":
-        return "Specify which dice you have three of.";
+      case "4 of a kind":
+        return (
+          <View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              {["Ones", "Twos", "Threes"].map((diceName) => (
+                <TouchableOpacity
+                  key={diceName}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    margin: 5,
+                  }}
+                  onPress={() =>
+                    handleDiceCountChange(
+                      rowName,
+                      getDieValue(diceName).toString(),
+                      rowIndex,
+                      cellIndex
+                    )
+                  }
+                >
+                  <Image
+                    source={diceImages[diceName]}
+                    style={{ width: 30, height: 30 }}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              {["Fours", "Fives", "Sixes"].map((diceName) => (
+                <TouchableOpacity
+                  key={diceName}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    margin: 5,
+                  }}
+                  onPress={() =>
+                    handleDiceCountChange(
+                      rowName,
+                      getDieValue(diceName).toString(),
+                      rowIndex,
+                      cellIndex
+                    )
+                  }
+                >
+                  <Image
+                    source={diceImages[diceName]}
+                    style={{ width: 30, height: 30 }}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        );
+      case "Small straight":
+      case "Large straight":
+      case "Yatzy":
+        return (
+          <View>
+            <Text>I got a {rowName}!</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-around",
+                marginTop: 20,
+              }}
+            >
+              <TouchableOpacity
+                style={{
+                  padding: 10,
+                  backgroundColor: "green",
+                  borderRadius: 5,
+                }}
+                onPress={() =>
+                  handleDiceCountChange(
+                    rowName,
+                    rowName === "Small Straight"
+                      ? "15"
+                      : rowName === "Yatzy"
+                      ? "50"
+                      : "20",
+                    rowIndex,
+                    cellIndex
+                  )
+                }
+              >
+                <Text style={{ color: "white" }}>Yes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ padding: 10, backgroundColor: "red", borderRadius: 5 }}
+                onPress={() => {
+                  clearCell(rowIndex, cellIndex);
+                  setModalVisible(false);
+                }}
+              >
+                <Text style={{ color: "white" }}>No</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        );
+      case "2 pair":
+      case "Full house":
+      case "Chance":
+        return (
+          <View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              {["Ones", "Twos", "Threes"].map((diceName) => (
+                <View
+                  key={diceName}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    margin: 5,
+                  }}
+                >
+                  <Image
+                    source={diceImages[diceName]}
+                    style={{ width: 30, height: 30 }}
+                  />
+                  <TextInput
+                    style={{
+                      padding: 5,
+                      borderColor: "gray",
+                      borderWidth: 1,
+                    }}
+                    keyboardType="numeric"
+                    onChangeText={(text) =>
+                      handleDiceCountChange(rowName, text, rowIndex, cellIndex)
+                    }
+                  />
+                </View>
+              ))}
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              {["Fours", "Fives", "Sixes"].map((diceName) => (
+                <View
+                  key={diceName}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    margin: 5,
+                  }}
+                >
+                  <Image
+                    source={diceImages[diceName]}
+                    style={{ width: 30, height: 30 }}
+                  />
+                  <TextInput
+                    style={{
+                      padding: 5,
+                      borderColor: "gray",
+                      borderWidth: 1,
+                    }}
+                    keyboardType="numeric"
+                    onChangeText={(text) =>
+                      handleDiceCountChange(rowName, text, rowIndex, cellIndex)
+                    }
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+        );
       // Add more cases as needed
       default:
         return "";
@@ -175,15 +405,24 @@ const YatzyBoardScreen = ({ navigation }) => {
         return cellValue * 5;
       case "Sixes":
         return cellValue * 6;
-      case "Sum":
-        let sum = 0;
-        for (let i = 1; i <= 6; i++) {
-          const value = parseInt(board[i][cellIndex + startColumn + 1]);
-          if (!isNaN(value)) {
-            sum += value;
-          }
-        }
-        return sum;
+      case "1 pair":
+        return cellValue * 2;
+      // case "2 pair":
+      //   pass;
+      case "3 of a kind":
+        return cellValue * 3;
+      case "4 of a kind":
+        return cellValue * 4;
+      case "Small straight":
+        return 15;
+      case "Large straight":
+        return 20;
+      case "Full house":
+        pass;
+      case "Chance":
+        pass;
+      case "Yatzy":
+        return 50;
       default:
         return cellValue;
     }
