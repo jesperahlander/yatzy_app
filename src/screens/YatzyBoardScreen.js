@@ -6,34 +6,26 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
+  TextInput,
+  Keyboard,
+  TouchableWithoutFeedback,
+  Modal,
+  TouchableHighlight,
+  Image,
 } from "react-native";
 import backButtonStyle from "../styles/backButtonStyle";
 import BackButton from "../components/backButton";
 import Cell from "../components/Cell";
 
-const YatzyBoardScreen = ({ navigation }) => {
-  // const [board, setBoard] = useState([
-  //   ["", "Player 1", "Player 2"],
-  //   ["Ones", "Cell 2", "Cell 3"],
-  //   ["Twos", "Cell 5", "Cell 6"],
-  //   ["Threes", "Cell 8", "Cell 9"],
-  //   ["Fours", "Cell 2", "Cell 3"],
-  //   ["Fives", "Cell 5", "Cell 6"],
-  //   ["Sixes", "Cell 8", "Cell 9"],
-  //   ["Sum", "Cell 2", "Cell 3"],
-  //   ["Bonus", "Cell 5", "Cell 6"],
-  //   ["1 pair", "Cell 8", "Cell 9"],
-  //   ["2 pair", "Cell 2", "Cell 3"],
-  //   ["3 of a kind", "Cell 5", "Cell 6"],
-  //   ["4 of a kind", "Cell 8", "Cell 9"],
-  //   ["Small straight", "Cell 2", "Cell 3"],
-  //   ["Large straight", "Cell 5", "Cell 6"],
-  //   ["Full house", "Cell 8", "Cell 9"],
-  //   ["Chance", "Cell 2", "Cell 3"],
-  //   ["Yatzy", "Cell 5", "Cell 6"],
-  //   ["Total", "Cell 8", "Cell 9"],
-  // ]);
+// Images
+import diceOne from "../assets/images/dice_1.png";
+import diceTwo from "../assets/images/dice_2.png";
+import diceThree from "../assets/images/dice_3.png";
+import diceFour from "../assets/images/dice_4.png";
+import diceFive from "../assets/images/dice_5.png";
+import diceSix from "../assets/images/dice_6.png";
 
+const YatzyBoardScreen = ({ navigation }) => {
   const [board, setBoard] = useState([
     [""],
     ["Ones"],
@@ -56,15 +48,25 @@ const YatzyBoardScreen = ({ navigation }) => {
     ["Total"],
   ]);
 
+  const diceImages = {
+    Ones: diceOne,
+    Twos: diceTwo,
+    Threes: diceThree,
+    Fours: diceFour,
+    Fives: diceFive,
+    Sixes: diceSix,
+  };
+
   const [startColumn, setStartColumn] = useState(0);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalContent, setModalContent] = useState(null);
+
+  const screenHeight = Dimensions.get("window").height;
 
   const addColumn = () => {
     const newBoard = board.map((row, rowIndex) => {
       const newColumnIndex = row.length;
-      const cell =
-        rowIndex === 0
-          ? `Player ${newColumnIndex}`
-          : `Cell ${rowIndex}, ${newColumnIndex}`;
+      const cell = rowIndex === 0 ? `Player ${newColumnIndex}` : "";
       return [...row, cell];
     });
     setBoard(newBoard);
@@ -89,112 +91,194 @@ const YatzyBoardScreen = ({ navigation }) => {
     }
   };
 
-  const screenHeight = Dimensions.get("window").height;
+  const handleCellPress = (rowIndex, cellIndex) => {
+    const rowName = board[rowIndex + 1][0];
+    if (rowName !== "Sum" && rowName !== "Bonus" && rowName !== "Total") {
+      setModalContent(getModalContent(rowName, rowIndex, cellIndex));
+      setModalVisible(true);
+    }
+  };
+
+  const handleDiceCountChange = (rowName, text, rowIndex, cellIndex) => {
+    const diceCount = parseInt(text);
+    if (!isNaN(diceCount)) {
+      const score = calculateValue(rowName, diceCount);
+      const newBoard = [...board];
+      newBoard[rowIndex + 1][cellIndex + startColumn + 1] = score;
+
+      // Calculate the sum
+      let sum = 0;
+      for (let i = 1; i <= 6; i++) {
+        const value = parseInt(newBoard[i][cellIndex + startColumn + 1]);
+        if (!isNaN(value)) {
+          sum += value;
+        }
+      }
+      newBoard[7][cellIndex + startColumn + 1] = sum;
+
+      setBoard(newBoard);
+      Keyboard.dismiss();
+
+      setTimeout(() => {
+        setModalVisible(false);
+      }, 200);
+    }
+  };
+
+  const getModalContent = (rowName, rowIndex, cellIndex) => {
+    switch (rowName) {
+      case "Ones":
+      case "Twos":
+      case "Threes":
+      case "Fours":
+      case "Fives":
+      case "Sixes":
+        return (
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Image
+              source={diceImages[rowName]}
+              style={{ width: 30, height: 30 }}
+            />
+            <TextInput
+              style={{
+                padding: 5,
+                borderColor: "gray",
+                borderWidth: 1,
+                marginLeft: 10,
+              }}
+              keyboardType="numeric"
+              onChangeText={(text) =>
+                handleDiceCountChange(rowName, text, rowIndex, cellIndex)
+              }
+            />
+          </View>
+        );
+      case "3 of a kind":
+        return "Specify which dice you have three of.";
+      // Add more cases as needed
+      default:
+        return "";
+    }
+  };
+
+  const calculateValue = (rowName, cellValue) => {
+    switch (rowName) {
+      case "Ones":
+        return cellValue;
+      case "Twos":
+        return cellValue * 2;
+      case "Threes":
+        return cellValue * 3;
+      case "Fours":
+        return cellValue * 4;
+      case "Fives":
+        return cellValue * 5;
+      case "Sixes":
+        return cellValue * 6;
+      case "Sum":
+        let sum = 0;
+        for (let i = 1; i <= 6; i++) {
+          const value = parseInt(board[i][cellIndex + startColumn + 1]);
+          if (!isNaN(value)) {
+            sum += value;
+          }
+        }
+        return sum;
+      default:
+        return cellValue;
+    }
+  };
 
   return (
-    <View style={styles.outerContainer}>
-      <BackButton navigation={navigation} style={backButtonStyle} />
-      <TouchableOpacity
-        style={{ position: "absolute", top: 30, left: 100 }}
-        onPress={addColumn}
-      >
-        <Text>Add Column</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={{ position: "absolute", top: 30, left: 180 }}
-        onPress={removeColumn}
-      >
-        <Text>Remove Column</Text>
-      </TouchableOpacity>
-      {startColumn > 0 && (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.outerContainer}>
+        <BackButton navigation={navigation} style={backButtonStyle} />
         <TouchableOpacity
-          style={{ position: "absolute", top: 60, left: 100 }}
-          onPress={shiftLeft}
+          style={{ position: "absolute", top: 30, left: 100 }}
+          onPress={addColumn}
         >
-          <Text>Shift Left</Text>
+          <Text>Add Column</Text>
         </TouchableOpacity>
-      )}
-      {startColumn < board[0].length - 4 && (
         <TouchableOpacity
-          style={{ position: "absolute", top: 60, left: 180 }}
-          onPress={shiftRight}
+          style={{ position: "absolute", top: 30, left: 180 }}
+          onPress={removeColumn}
         >
-          <Text>Shift Right</Text>
+          <Text>Remove Column</Text>
         </TouchableOpacity>
-      )}
-      <View style={styles.scrollViewContainer}>
-        <View style={styles.row}>
-          {/* <TouchableOpacity
-            style={styles.firstCell}
-            onPress={() => {
-              alert(`Popup for ${board[0][0]}`);
-            }}
+        {startColumn > 0 && (
+          <TouchableOpacity
+            style={{ position: "absolute", top: 60, left: 100 }}
+            onPress={shiftLeft}
           >
-            <Text>{board[0][0]}</Text>
-          </TouchableOpacity> */}
-          <Cell
-            cell={board[0][0]}
-            onPress={() => alert(`Popup for ${board[0][0]}`)}
-            style={styles.firstCell}
-          />
-          {board[0]
-            .slice(startColumn + 1, startColumn + 4)
-            .map((cell, cellIndex) => (
-              // <TouchableOpacity
-              //   key={cellIndex}
-              //   style={styles.cell}
-              //   onPress={() => {
-              //     console.log(`Pressed ${cell}`);
-              //   }}
-              // >
-              //   <Text>{cell}</Text>
-              // </TouchableOpacity>
-              <Cell
-                key={cellIndex}
-                cell={cell}
-                onPress={() => console.log(`Pressed ${cell}`)}
-                style={styles.cell}
-              />
+            <Text>Shift Left</Text>
+          </TouchableOpacity>
+        )}
+        {startColumn < board[0].length - 4 && (
+          <TouchableOpacity
+            style={{ position: "absolute", top: 60, left: 180 }}
+            onPress={shiftRight}
+          >
+            <Text>Shift Right</Text>
+          </TouchableOpacity>
+        )}
+        <View style={styles.scrollViewContainer}>
+          <View style={styles.row}>
+            <Cell cell={board[0][0]} style={styles.firstCell} />
+            {board[0]
+              .slice(startColumn + 1, startColumn + 4)
+              .map((cell, cellIndex) => (
+                <Cell key={cellIndex} cell={cell} style={styles.cell} />
+              ))}
+          </View>
+          <ScrollView style={{ maxHeight: screenHeight * 0.8 }} bounces={false}>
+            {board.slice(1).map((row, rowIndex) => (
+              <View key={rowIndex} style={styles.row}>
+                <Cell
+                  cell={row[0]}
+                  onPress={() => alert(`Popup for ${row[0]}`)}
+                  style={styles.firstCell}
+                />
+                {row.slice(startColumn + 1).map((cell, cellIndex) => (
+                  <Cell
+                    key={cellIndex}
+                    cell={cell.toString()}
+                    onPress={() => handleCellPress(rowIndex, cellIndex)}
+                    style={styles.cell}
+                    rowName={board[rowIndex + 1][0]}
+                  />
+                ))}
+              </View>
             ))}
+          </ScrollView>
         </View>
-        <ScrollView style={{ maxHeight: screenHeight * 0.8 }} bounces={false}>
-          {board.slice(1).map((row, rowIndex) => (
-            <View key={rowIndex} style={styles.row}>
-              {/* <TouchableOpacity
-                style={styles.firstCell}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => {
+            setModalVisible(!modalVisible);
+          }}
+        >
+          <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+            <View style={styles.centeredView}>
+              <TouchableWithoutFeedback>
+                <View style={styles.modalView}>
+                  {modalContent}
+                  {/* <TouchableHighlight
+                style={{ ...styles.openButton, backgroundColor: "#2196F3" }}
                 onPress={() => {
-                  alert(`Popup for ${row[0]}`);
+                  setModalVisible(!modalVisible);
                 }}
               >
-                <Text>{row[0]}</Text>
-              </TouchableOpacity> */}
-              <Cell
-                cell={row[0]}
-                onPress={() => alert(`Popup for ${row[0]}`)}
-                style={styles.firstCell}
-              />
-              {row.slice(startColumn + 1).map((cell, cellIndex) => (
-                // <TouchableOpacity
-                //   key={cellIndex}
-                //   style={styles.cell}
-                //   onPress={() => {
-                //     console.log(`Pressed ${cell}`);
-                //   }}
-                // >
-                //   <Text>{cell}</Text>
-                // </TouchableOpacity>
-                <Cell
-                  key={cellIndex}
-                  cell={cell}
-                  onPress={() => console.log(`Pressed ${cell}`)}
-                  style={styles.cell}
-                />
-              ))}
+                <Text style={styles.textStyle}>Close</Text>
+              </TouchableHighlight> */}
+                </View>
+              </TouchableWithoutFeedback>
             </View>
-          ))}
-        </ScrollView>
+          </TouchableWithoutFeedback>
+        </Modal>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -233,6 +317,41 @@ const styles = StyleSheet.create({
     padding: 0,
     justifyContent: "center",
     alignItems: "center",
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  openButton: {
+    backgroundColor: "#F194FF",
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+  },
+  textStyle: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: "center",
   },
 });
 

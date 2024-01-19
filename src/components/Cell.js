@@ -1,11 +1,25 @@
 import React from "react";
-import { TouchableOpacity, Text } from "react-native";
-// import styles from "../styles/cellStyles";
+import { TouchableOpacity, Text, TouchableHighlight } from "react-native";
 
-const Cell = ({ cell, onPress, style }) => (
-  <TouchableOpacity style={style} onPress={onPress}>
-    <Text>{cell}</Text>
-  </TouchableOpacity>
-);
+const Cell = ({ cell, onPress, style, rowName }) => {
+  if (
+    !onPress ||
+    rowName === "Sum" ||
+    rowName === "Bonus" ||
+    rowName === "Total"
+  ) {
+    return (
+      <TouchableHighlight underlayColor="transparent" style={style}>
+        <Text>{cell}</Text>
+      </TouchableHighlight>
+    );
+  } else {
+    return (
+      <TouchableOpacity style={style} onPress={onPress}>
+        <Text>{cell}</Text>
+      </TouchableOpacity>
+    );
+  }
+};
 
 export default Cell;
