@@ -1,7 +1,7 @@
 import React from "react";
 import { TouchableOpacity, Text, TouchableHighlight } from "react-native";
 
-const Cell = ({ cell, onPress, style, rowName }) => {
+const Cell = ({ cell, onPress, style, rowName, onLongPress }) => {
   if (
     !onPress ||
     rowName === "Sum" ||
@@ -15,7 +15,13 @@ const Cell = ({ cell, onPress, style, rowName }) => {
     );
   } else {
     return (
-      <TouchableOpacity style={style} onPress={onPress}>
+      <TouchableOpacity
+        style={style}
+        onPress={onPress}
+        onLongPress={onLongPress}
+        // onLongPress={() => console.log("onLongPress")}
+        delayLongPress={500}
+      >
         <Text>{cell}</Text>
       </TouchableOpacity>
     );

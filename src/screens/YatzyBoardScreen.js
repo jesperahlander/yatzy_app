@@ -59,8 +59,39 @@ const YatzyBoardScreen = ({ navigation }) => {
   const [startColumn, setStartColumn] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState(null);
+  const [countOnes, setCountOnes] = useState(0);
+  const [countTwos, setCountTwos] = useState(0);
+  const [countThrees, setCountThrees] = useState(0);
+  const [countFours, setCountFours] = useState(0);
+  const [countFives, setCountFives] = useState(0);
+  const [countSixes, setCountSixes] = useState(0);
 
   const screenHeight = Dimensions.get("window").height;
+
+  const updateDiceCounts = (diceName, diceCount) => {
+    if (diceName === "Ones") {
+      setCountOnes(diceCount);
+    } else if (diceName === "Twos") {
+      setCountTwos(diceCount);
+    } else if (diceName === "Threes") {
+      setCountThrees(diceCount);
+    } else if (diceName === "Fours") {
+      setCountFours(diceCount);
+    } else if (diceName === "Fives") {
+      setCountFives(diceCount);
+    } else if (diceName === "Sixes") {
+      setCountSixes(diceCount);
+    }
+  };
+
+  const resetCounts = () => {
+    setCountOnes(0);
+    setCountTwos(0);
+    setCountThrees(0);
+    setCountFours(0);
+    setCountFives(0);
+    setCountSixes(0);
+  };
 
   const addColumn = () => {
     const newBoard = board.map((row, rowIndex) => {
@@ -91,9 +122,18 @@ const YatzyBoardScreen = ({ navigation }) => {
   };
 
   const handleCellPress = (rowIndex, cellIndex) => {
+    console.log("Cell press");
     const rowName = board[rowIndex + 1][0];
     if (rowName !== "Sum" && rowName !== "Bonus" && rowName !== "Total") {
       setModalContent(getModalContent(rowName, rowIndex, cellIndex));
+      setModalVisible(true);
+    }
+  };
+
+  const handleLongCellPress = (rowIndex, cellIndex) => {
+    const rowName = board[rowIndex + 1][0];
+    if (rowName !== "Sum" && rowName !== "Bonus" && rowName !== "Total") {
+      setModalContent(getLongPressModalContent(rowName, rowIndex, cellIndex));
       setModalVisible(true);
     }
   };
@@ -125,9 +165,38 @@ const YatzyBoardScreen = ({ navigation }) => {
     }
   };
 
+  const handleDiceCountChange2 = (rowName, rowIndex, cellIndex) => {
+    // resetCounts();
+    const newBoard = [...board];
+    const score = calculateValue(rowName, countOnes);
+    newBoard[rowIndex + 1][cellIndex + startColumn + 1] = score;
+
+    // Calculate Sum
+    const sum = calculateSum(newBoard, cellIndex);
+    newBoard[7][cellIndex + startColumn + 1] = sum;
+
+    // Calculate Bonus
+    calculateBonus(newBoard, cellIndex);
+
+    // Calculate Total
+    const total = calculateTotal(newBoard, cellIndex);
+    newBoard[18][cellIndex + startColumn + 1] = total;
+
+    setBoard(newBoard);
+    Keyboard.dismiss();
+    setModalVisible(false);
+    // resetCounts();
+  };
+
   const clearCell = (rowIndex, cellIndex) => {
     const newBoard = [...board];
     newBoard[rowIndex + 1][cellIndex + startColumn + 1] = "";
+    setBoard(newBoard);
+  };
+
+  const skipCell = (rowIndex, cellIndex) => {
+    const newBoard = [...board];
+    newBoard[rowIndex + 1][cellIndex + startColumn + 1] = "-";
     setBoard(newBoard);
   };
 
@@ -189,6 +258,43 @@ const YatzyBoardScreen = ({ navigation }) => {
       default:
         return 0;
     }
+  };
+  const getLongPressModalContent = (rowName, rowIndex, cellIndex) => {
+    return (
+      <View>
+        <Text>Do you want to skip this?</Text>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-around",
+            marginTop: 20,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              padding: 10,
+              backgroundColor: "green",
+              borderRadius: 5,
+            }}
+            onPress={() => {
+              skipCell(rowIndex, cellIndex);
+              setModalVisible(false);
+            }}
+          >
+            <Text style={{ color: "white" }}>Yes</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ padding: 10, backgroundColor: "red", borderRadius: 5 }}
+            onPress={() => {
+              clearCell(rowIndex, cellIndex);
+              setModalVisible(false);
+            }}
+          >
+            <Text style={{ color: "white" }}>No</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   };
 
   const getModalContent = (rowName, rowIndex, cellIndex) => {
@@ -326,7 +432,7 @@ const YatzyBoardScreen = ({ navigation }) => {
       case "Full house":
       case "Chance":
         return (
-          <View>
+          <View style={{ alignItems: "center" }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               {["Ones", "Twos", "Threes"].map((diceName) => (
                 <View
@@ -349,7 +455,7 @@ const YatzyBoardScreen = ({ navigation }) => {
                     }}
                     keyboardType="numeric"
                     onChangeText={(text) =>
-                      handleDiceCountChange(rowName, text, rowIndex, cellIndex)
+                      updateDiceCounts(diceName, parseInt(text))
                     }
                   />
                 </View>
@@ -377,12 +483,26 @@ const YatzyBoardScreen = ({ navigation }) => {
                     }}
                     keyboardType="numeric"
                     onChangeText={(text) =>
-                      handleDiceCountChange(rowName, text, rowIndex, cellIndex)
+                      updateDiceCounts(diceName, parseInt(text))
                     }
                   />
                 </View>
               ))}
             </View>
+            <TouchableOpacity
+              style={{
+                padding: 10,
+                backgroundColor: "blue",
+                borderRadius: 5,
+                width: 80,
+                alignItems: "center",
+              }}
+              onPress={() => {
+                handleDiceCountChange2(rowName, rowIndex, cellIndex);
+              }}
+            >
+              <Text style={{ color: "white" }}>OK</Text>
+            </TouchableOpacity>
           </View>
         );
       // Add more cases as needed
@@ -407,8 +527,15 @@ const YatzyBoardScreen = ({ navigation }) => {
         return cellValue * 6;
       case "1 pair":
         return cellValue * 2;
-      // case "2 pair":
-      //   pass;
+      case "2 pair":
+        return (
+          1 * countOnes +
+          2 * countTwos +
+          3 * countThrees +
+          4 * countFours +
+          5 * countFives +
+          6 * countSixes
+        );
       case "3 of a kind":
         return cellValue * 3;
       case "4 of a kind":
@@ -418,9 +545,23 @@ const YatzyBoardScreen = ({ navigation }) => {
       case "Large straight":
         return 20;
       case "Full house":
-        pass;
+        return (
+          1 * countOnes +
+          2 * countTwos +
+          3 * countThrees +
+          4 * countFours +
+          5 * countFives +
+          6 * countSixes
+        );
       case "Chance":
-        pass;
+        return (
+          1 * countOnes +
+          2 * countTwos +
+          3 * countThrees +
+          4 * countFours +
+          5 * countFives +
+          6 * countSixes
+        );
       case "Yatzy":
         return 50;
       default:
@@ -443,6 +584,12 @@ const YatzyBoardScreen = ({ navigation }) => {
           onPress={removeColumn}
         >
           <Text>Remove Column</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ position: "absolute", top: 30, left: 300, borderWidth: 1 }}
+          onPress={resetCounts}
+        >
+          <Text>RESET</Text>
         </TouchableOpacity>
         {startColumn > 0 && (
           <TouchableOpacity
@@ -484,6 +631,7 @@ const YatzyBoardScreen = ({ navigation }) => {
                     onPress={() => handleCellPress(rowIndex, cellIndex)}
                     style={styles.cell}
                     rowName={board[rowIndex + 1][0]}
+                    onLongPress={() => handleLongCellPress(rowIndex, cellIndex)}
                   />
                 ))}
               </View>
