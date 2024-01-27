@@ -32,6 +32,12 @@ const HomeScreen = ({ navigation }) => {
       </Pressable>
       <Pressable
         style={styles.button}
+        onPress={() => navigation.navigate("SetupBoardScreen")}
+      >
+        <Text style={styles.buttonText}>Add Players</Text>
+      </Pressable>
+      <Pressable
+        style={styles.button}
         onPress={() => navigation.navigate("SettingsScreen")}
       >
         <Text style={styles.buttonText}>Settings</Text>

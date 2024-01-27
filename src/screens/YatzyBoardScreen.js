@@ -15,6 +15,15 @@ import {
 import backButtonStyle from "../styles/backButtonStyle";
 import BackButton from "../components/backButton";
 import Cell from "../components/Cell";
+import {
+  // clearCell,
+  // skipCell,
+  updateSum,
+  updateBonus,
+  updateTotal,
+  updateCell,
+  skipOrClearCell,
+} from "../utils/yatzyBoardHelpers";
 
 // Images
 import diceOne from "../assets/images/dice_1.png";
@@ -138,23 +147,54 @@ const YatzyBoardScreen = ({ navigation }) => {
     }
   };
 
+  const handleSkipClear = (option, rowIndex, cellIndex) => {
+    let newBoard = [...board];
+
+    // Skip or Clear cell
+    newBoard = skipOrClearCell(
+      newBoard,
+      option,
+      startColumn,
+      rowIndex,
+      cellIndex
+    );
+
+    // Update Sum
+    newBoard = updateSum(newBoard, startColumn, cellIndex);
+
+    // Update Bonus
+    newBoard = updateBonus(newBoard, startColumn, cellIndex);
+
+    // Update Total
+    newBoard = updateTotal(newBoard, startColumn, cellIndex);
+
+    setBoard(newBoard);
+    setModalVisible(false);
+  };
+
   const handleDiceCountChange = (rowName, text, rowIndex, cellIndex) => {
     const diceCount = parseInt(text);
     if (!isNaN(diceCount)) {
-      const score = calculateValue(rowName, diceCount);
-      const newBoard = [...board];
-      newBoard[rowIndex + 1][cellIndex + startColumn + 1] = score;
+      let newBoard = [...board];
 
-      // Calculate Sum
-      const sum = calculateSum(newBoard, cellIndex);
-      newBoard[7][cellIndex + startColumn + 1] = sum;
+      // Update Cell
+      newBoard = updateCell(
+        newBoard,
+        rowName,
+        diceCount,
+        startColumn,
+        rowIndex,
+        cellIndex
+      );
 
-      // Calculate Bonus
-      calculateBonus(newBoard, cellIndex);
+      // Update Sum
+      newBoard = updateSum(newBoard, startColumn, cellIndex);
 
-      // Calculate Total
-      const total = calculateTotal(newBoard, cellIndex);
-      newBoard[18][cellIndex + startColumn + 1] = total;
+      // Update Bonus
+      newBoard = updateBonus(newBoard, startColumn, cellIndex);
+
+      // Update Total
+      newBoard = updateTotal(newBoard, startColumn, cellIndex);
 
       setBoard(newBoard);
       Keyboard.dismiss();
@@ -166,79 +206,37 @@ const YatzyBoardScreen = ({ navigation }) => {
   };
 
   const handleDiceCountChange2 = (rowName, rowIndex, cellIndex) => {
-    // resetCounts();
-    const newBoard = [...board];
-    const score = calculateValue(rowName, countOnes);
-    newBoard[rowIndex + 1][cellIndex + startColumn + 1] = score;
+    let newBoard = [...board];
+    const diceCount = [
+      countOnes,
+      countTwos,
+      countThrees,
+      countFours,
+      countFives,
+      countSixes,
+    ];
+    // Update Cell
+    newBoard = updateCell(
+      newBoard,
+      rowName,
+      diceCount,
+      startColumn,
+      rowIndex,
+      cellIndex
+    );
 
-    // Calculate Sum
-    const sum = calculateSum(newBoard, cellIndex);
-    newBoard[7][cellIndex + startColumn + 1] = sum;
+    // Update Sum
+    newBoard = updateSum(newBoard, startColumn, cellIndex);
 
-    // Calculate Bonus
-    calculateBonus(newBoard, cellIndex);
+    // Update Bonus
+    newBoard = updateBonus(newBoard, startColumn, cellIndex);
 
-    // Calculate Total
-    const total = calculateTotal(newBoard, cellIndex);
-    newBoard[18][cellIndex + startColumn + 1] = total;
+    // Update Total
+    newBoard = updateTotal(newBoard, startColumn, cellIndex);
 
     setBoard(newBoard);
     Keyboard.dismiss();
     setModalVisible(false);
-    // resetCounts();
-  };
-
-  const clearCell = (rowIndex, cellIndex) => {
-    const newBoard = [...board];
-    newBoard[rowIndex + 1][cellIndex + startColumn + 1] = "";
-    setBoard(newBoard);
-  };
-
-  const skipCell = (rowIndex, cellIndex) => {
-    const newBoard = [...board];
-    newBoard[rowIndex + 1][cellIndex + startColumn + 1] = "-";
-    setBoard(newBoard);
-  };
-
-  const calculateTotal = (newBoard, cellIndex) => {
-    let sum = 0;
-    for (let i = 7; i <= 17; i++) {
-      const value = parseInt(newBoard[i][cellIndex + startColumn + 1]);
-      if (!isNaN(value) && value !== "-") {
-        sum += value;
-      }
-    }
-    return sum;
-  };
-
-  const calculateSum = (newBoard, cellIndex) => {
-    let sum = 0;
-    for (let i = 1; i <= 6; i++) {
-      const value = parseInt(newBoard[i][cellIndex + startColumn + 1]);
-      if (!isNaN(value)) {
-        sum += value;
-      }
-    }
-    return sum;
-  };
-
-  const calculateBonus = (newBoard, cellIndex) => {
-    let bonus = 0;
-    let filledCells = 0;
-    let sum = 0;
-    for (let i = 1; i <= 6; i++) {
-      const value = parseInt(newBoard[i][cellIndex + startColumn + 1]);
-      if (!isNaN(value)) {
-        sum += value;
-        filledCells++;
-      }
-    }
-    if (filledCells === 6) {
-      bonus = sum >= 63 ? 50 : 0;
-    } else {
-      bonus = "-";
-    }
-    newBoard[8][cellIndex + startColumn + 1] = bonus;
   };
 
   const getDieValue = (dieName) => {
@@ -259,10 +257,11 @@ const YatzyBoardScreen = ({ navigation }) => {
         return 0;
     }
   };
+
   const getLongPressModalContent = (rowName, rowIndex, cellIndex) => {
     return (
       <View>
-        <Text>Do you want to skip this?</Text>
+        <Text>Do you want to skip or clear this cell?</Text>
         <View
           style={{
             flexDirection: "row",
@@ -277,20 +276,18 @@ const YatzyBoardScreen = ({ navigation }) => {
               borderRadius: 5,
             }}
             onPress={() => {
-              skipCell(rowIndex, cellIndex);
-              setModalVisible(false);
+              handleSkipClear("skip", rowIndex, cellIndex);
             }}
           >
-            <Text style={{ color: "white" }}>Yes</Text>
+            <Text style={{ color: "white" }}>Skip</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={{ padding: 10, backgroundColor: "red", borderRadius: 5 }}
             onPress={() => {
-              clearCell(rowIndex, cellIndex);
-              setModalVisible(false);
+              handleSkipClear("clear", rowIndex, cellIndex);
             }}
           >
-            <Text style={{ color: "white" }}>No</Text>
+            <Text style={{ color: "white" }}>Clear</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -420,6 +417,7 @@ const YatzyBoardScreen = ({ navigation }) => {
                 style={{ padding: 10, backgroundColor: "red", borderRadius: 5 }}
                 onPress={() => {
                   clearCell(rowIndex, cellIndex);
+                  // clearCell(board, startColumn, rowIndex, cellIndex);
                   setModalVisible(false);
                 }}
               >
@@ -508,64 +506,6 @@ const YatzyBoardScreen = ({ navigation }) => {
       // Add more cases as needed
       default:
         return "";
-    }
-  };
-
-  const calculateValue = (rowName, cellValue) => {
-    switch (rowName) {
-      case "Ones":
-        return cellValue;
-      case "Twos":
-        return cellValue * 2;
-      case "Threes":
-        return cellValue * 3;
-      case "Fours":
-        return cellValue * 4;
-      case "Fives":
-        return cellValue * 5;
-      case "Sixes":
-        return cellValue * 6;
-      case "1 pair":
-        return cellValue * 2;
-      case "2 pair":
-        return (
-          1 * countOnes +
-          2 * countTwos +
-          3 * countThrees +
-          4 * countFours +
-          5 * countFives +
-          6 * countSixes
-        );
-      case "3 of a kind":
-        return cellValue * 3;
-      case "4 of a kind":
-        return cellValue * 4;
-      case "Small straight":
-        return 15;
-      case "Large straight":
-        return 20;
-      case "Full house":
-        return (
-          1 * countOnes +
-          2 * countTwos +
-          3 * countThrees +
-          4 * countFours +
-          5 * countFives +
-          6 * countSixes
-        );
-      case "Chance":
-        return (
-          1 * countOnes +
-          2 * countTwos +
-          3 * countThrees +
-          4 * countFours +
-          5 * countFives +
-          6 * countSixes
-        );
-      case "Yatzy":
-        return 50;
-      default:
-        return cellValue;
     }
   };
 
