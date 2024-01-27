@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,13 +16,12 @@ import backButtonStyle from "../styles/backButtonStyle";
 import BackButton from "../components/backButton";
 import Cell from "../components/Cell";
 import {
-  // clearCell,
-  // skipCell,
   updateSum,
   updateBonus,
   updateTotal,
   updateCell,
   skipOrClearCell,
+  getDieValue,
 } from "../utils/yatzyBoardHelpers";
 
 // Images
@@ -105,7 +104,16 @@ const YatzyBoardScreen = ({ navigation }) => {
   const addColumn = () => {
     const newBoard = board.map((row, rowIndex) => {
       const newColumnIndex = row.length;
-      const cell = rowIndex === 0 ? `Player ${newColumnIndex}` : "";
+      let cell = "";
+
+      if (rowIndex === 0) {
+        cell = `Player ${newColumnIndex}`;
+      } else if (rowIndex === 7 || rowIndex === 18) {
+        cell = 0;
+      } else if (rowIndex === 8) {
+        cell = "-";
+      }
+
       return [...row, cell];
     });
     setBoard(newBoard);
@@ -172,37 +180,38 @@ const YatzyBoardScreen = ({ navigation }) => {
     setModalVisible(false);
   };
 
-  const handleDiceCountChange = (rowName, text, rowIndex, cellIndex) => {
-    const diceCount = parseInt(text);
-    if (!isNaN(diceCount)) {
-      let newBoard = [...board];
-
-      // Update Cell
-      newBoard = updateCell(
-        newBoard,
-        rowName,
-        diceCount,
-        startColumn,
-        rowIndex,
-        cellIndex
-      );
-
-      // Update Sum
-      newBoard = updateSum(newBoard, startColumn, cellIndex);
-
-      // Update Bonus
-      newBoard = updateBonus(newBoard, startColumn, cellIndex);
-
-      // Update Total
-      newBoard = updateTotal(newBoard, startColumn, cellIndex);
-
-      setBoard(newBoard);
-      Keyboard.dismiss();
-
-      setTimeout(() => {
-        setModalVisible(false);
-      }, 200);
+  const handleDiceCountChange = (rowName, rowIndex, cellIndex, text) => {
+    let diceCount = parseInt(text);
+    if (isNaN(diceCount)) {
+      diceCount = 0; // Value will not matter in updateCell
     }
+    let newBoard = [...board];
+
+    // Update Cell
+    newBoard = updateCell(
+      newBoard,
+      rowName,
+      diceCount,
+      startColumn,
+      rowIndex,
+      cellIndex
+    );
+
+    // Update Sum
+    newBoard = updateSum(newBoard, startColumn, cellIndex);
+
+    // Update Bonus
+    newBoard = updateBonus(newBoard, startColumn, cellIndex);
+
+    // Update Total
+    newBoard = updateTotal(newBoard, startColumn, cellIndex);
+
+    setBoard(newBoard);
+    Keyboard.dismiss();
+
+    setTimeout(() => {
+      setModalVisible(false);
+    }, 200);
   };
 
   const handleDiceCountChange2 = (rowName, rowIndex, cellIndex) => {
@@ -237,25 +246,6 @@ const YatzyBoardScreen = ({ navigation }) => {
     setBoard(newBoard);
     Keyboard.dismiss();
     setModalVisible(false);
-  };
-
-  const getDieValue = (dieName) => {
-    switch (dieName) {
-      case "Ones":
-        return 1;
-      case "Twos":
-        return 2;
-      case "Threes":
-        return 3;
-      case "Fours":
-        return 4;
-      case "Fives":
-        return 5;
-      case "Sixes":
-        return 6;
-      default:
-        return 0;
-    }
   };
 
   const getLongPressModalContent = (rowName, rowIndex, cellIndex) => {
@@ -317,7 +307,7 @@ const YatzyBoardScreen = ({ navigation }) => {
               }}
               keyboardType="numeric"
               onChangeText={(text) =>
-                handleDiceCountChange(rowName, text, rowIndex, cellIndex)
+                handleDiceCountChange(rowName, rowIndex, cellIndex, text)
               }
             />
           </View>
@@ -339,9 +329,9 @@ const YatzyBoardScreen = ({ navigation }) => {
                   onPress={() =>
                     handleDiceCountChange(
                       rowName,
-                      getDieValue(diceName).toString(),
                       rowIndex,
-                      cellIndex
+                      cellIndex,
+                      getDieValue(diceName).toString()
                     )
                   }
                 >
@@ -364,9 +354,9 @@ const YatzyBoardScreen = ({ navigation }) => {
                   onPress={() =>
                     handleDiceCountChange(
                       rowName,
-                      getDieValue(diceName).toString(),
                       rowIndex,
-                      cellIndex
+                      cellIndex,
+                      getDieValue(diceName).toString()
                     )
                   }
                 >
@@ -399,16 +389,7 @@ const YatzyBoardScreen = ({ navigation }) => {
                   borderRadius: 5,
                 }}
                 onPress={() =>
-                  handleDiceCountChange(
-                    rowName,
-                    rowName === "Small Straight"
-                      ? "15"
-                      : rowName === "Yatzy"
-                      ? "50"
-                      : "20",
-                    rowIndex,
-                    cellIndex
-                  )
+                  handleDiceCountChange(rowName, rowIndex, cellIndex)
                 }
               >
                 <Text style={{ color: "white" }}>Yes</Text>
@@ -416,9 +397,7 @@ const YatzyBoardScreen = ({ navigation }) => {
               <TouchableOpacity
                 style={{ padding: 10, backgroundColor: "red", borderRadius: 5 }}
                 onPress={() => {
-                  clearCell(rowIndex, cellIndex);
-                  // clearCell(board, startColumn, rowIndex, cellIndex);
-                  setModalVisible(false);
+                  handleSkipClear("clear", rowIndex, cellIndex);
                 }}
               >
                 <Text style={{ color: "white" }}>No</Text>

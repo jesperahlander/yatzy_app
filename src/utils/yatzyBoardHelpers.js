@@ -1,91 +1,20 @@
-export const calculateSum = (board, startColumn, cellIndex) => {
-  let sum = 0;
-  for (let i = 1; i <= 6; i++) {
-    const value = parseInt(board[i][cellIndex + startColumn + 1]);
-    if (!isNaN(value)) {
-      sum += value;
-    }
+export const getDieValue = (dieName) => {
+  switch (dieName) {
+    case "Ones":
+      return 1;
+    case "Twos":
+      return 2;
+    case "Threes":
+      return 3;
+    case "Fours":
+      return 4;
+    case "Fives":
+      return 5;
+    case "Sixes":
+      return 6;
+    default:
+      return 0;
   }
-  return sum;
-};
-
-export const calculateBonus = (board, startColumn, cellIndex) => {
-  let bonus = "-";
-  let sum = 0;
-  for (let i = 1; i <= 6; i++) {
-    const value = parseInt(board[i][cellIndex + startColumn + 1]);
-    if (!isNaN(value)) {
-      sum += value;
-    }
-  }
-  if (sum >= 63) {
-    bonus = 50;
-  }
-  return bonus;
-};
-
-export const calculateTotal = (board, startColumn, cellIndex) => {
-  let sum = 0;
-  for (let i = 7; i <= 17; i++) {
-    const value = parseInt(board[i][cellIndex + startColumn + 1]);
-    if (!isNaN(value)) {
-      sum += value;
-    }
-  }
-  return sum;
-};
-
-export const updateSum = (board, startColumn, cellIndex) => {
-  const newBoard = [...board];
-  const sum = calculateSum(newBoard, startColumn, cellIndex);
-  newBoard[7][cellIndex + startColumn + 1] = sum;
-
-  return newBoard;
-};
-
-export const updateBonus = (board, startColumn, cellIndex) => {
-  const newBoard = [...board];
-  const bonus = calculateBonus(newBoard, startColumn, cellIndex);
-  newBoard[8][cellIndex + startColumn + 1] = bonus;
-
-  return newBoard;
-};
-
-export const updateTotal = (board, startColumn, cellIndex) => {
-  const newBoard = [...board];
-  const total = calculateTotal(newBoard, startColumn, cellIndex);
-  newBoard[18][cellIndex + startColumn + 1] = total;
-
-  return newBoard;
-};
-
-export const updateCell = (
-  board,
-  rowName,
-  diceCount,
-  startColumn,
-  rowIndex,
-  cellIndex
-) => {
-  const newBoard = [...board];
-  const score = calculateCellValue(rowName, diceCount);
-  newBoard[rowIndex + 1][cellIndex + startColumn + 1] = score;
-
-  return newBoard;
-};
-
-export const skipOrClearCell = (
-  board,
-  option,
-  startColumn,
-  rowIndex,
-  cellIndex
-) => {
-  const newBoard = [...board];
-  const cellContent = option === "skip" ? "-" : "";
-  newBoard[rowIndex + 1][cellIndex + startColumn + 1] = cellContent;
-
-  return newBoard;
 };
 
 export const calculateCellValue = (rowName, diceCount) => {
@@ -125,4 +54,94 @@ export const calculateCellValue = (rowName, diceCount) => {
     default:
       return diceCount;
   }
+};
+
+export const calculateSum = (board, startColumn, cellIndex) => {
+  let sum = 0;
+  for (let i = 1; i <= 6; i++) {
+    const value = parseInt(board[i][cellIndex + startColumn + 1]);
+    if (!isNaN(value)) {
+      sum += value;
+    }
+  }
+  return sum;
+};
+
+export const calculateBonus = (board, startColumn, cellIndex) => {
+  let bonus = "-";
+  let sum = 0;
+  for (let i = 1; i <= 6; i++) {
+    const value = parseInt(board[i][cellIndex + startColumn + 1]);
+    if (!isNaN(value)) {
+      sum += value;
+    }
+  }
+  if (sum >= 63) {
+    bonus = 50;
+  }
+  return bonus;
+};
+
+export const calculateTotal = (board, startColumn, cellIndex) => {
+  let sum = 0;
+  for (let i = 7; i <= 17; i++) {
+    const value = parseInt(board[i][cellIndex + startColumn + 1]);
+    if (!isNaN(value)) {
+      sum += value;
+    }
+  }
+  return sum;
+};
+
+export const updateCell = (
+  board,
+  rowName,
+  diceCount,
+  startColumn,
+  rowIndex,
+  cellIndex
+) => {
+  const newBoard = [...board];
+  const score = calculateCellValue(rowName, diceCount);
+  newBoard[rowIndex + 1][cellIndex + startColumn + 1] = score;
+
+  return newBoard;
+};
+
+export const updateSum = (board, startColumn, cellIndex) => {
+  const newBoard = [...board];
+  const sum = calculateSum(newBoard, startColumn, cellIndex);
+  newBoard[7][cellIndex + startColumn + 1] = sum;
+
+  return newBoard;
+};
+
+export const updateBonus = (board, startColumn, cellIndex) => {
+  const newBoard = [...board];
+  const bonus = calculateBonus(newBoard, startColumn, cellIndex);
+  newBoard[8][cellIndex + startColumn + 1] = bonus;
+
+  return newBoard;
+};
+
+export const updateTotal = (board, startColumn, cellIndex) => {
+  const newBoard = [...board];
+  const total = calculateTotal(newBoard, startColumn, cellIndex);
+  newBoard[18][cellIndex + startColumn + 1] = total;
+
+  return newBoard;
+};
+
+export const skipOrClearCell = (
+  board,
+  option,
+  startColumn,
+  rowIndex,
+  cellIndex
+) => {
+  const newBoard = [...board];
+  const cellContent = option === "skip" ? "-" : "";
+  newBoard[rowIndex + 1][cellIndex + startColumn + 1] = cellContent;
+
+  return newBoard;
 };
