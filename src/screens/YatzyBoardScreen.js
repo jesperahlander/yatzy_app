@@ -73,8 +73,49 @@ const YatzyBoardScreen = ({ navigation }) => {
   const [countFours, setCountFours] = useState(0);
   const [countFives, setCountFives] = useState(0);
   const [countSixes, setCountSixes] = useState(0);
+  const [lastUpdatedCell, setLastUpdatedCell] = useState({});
 
   const screenHeight = Dimensions.get("window").height;
+
+  printCounts = () => {
+    console.log("countOnes is now: ", countOnes);
+    console.log("countTwos is now: ", countTwos);
+    console.log("countThrees is now: ", countThrees);
+    console.log("countFours is now: ", countFours);
+    console.log("countFives is now: ", countFives);
+    console.log("countSixes is now: ", countSixes);
+  };
+
+  useEffect(() => {
+    console.log("--Inside useEffect--");
+    printCounts();
+    console.log("Last updated cell: ", lastUpdatedCell);
+    if (
+      (lastUpdatedCell.rowName === "2 pair" &&
+        countOnes +
+          countTwos +
+          countThrees +
+          countFours +
+          countFives +
+          countSixes ==
+          4) ||
+      ((lastUpdatedCell.rowName === "Full house" ||
+        lastUpdatedCell.rowName === "Chance") &&
+        countOnes +
+          countTwos +
+          countThrees +
+          countFours +
+          countFives +
+          countSixes ==
+          5)
+    ) {
+      handleDiceCountChange2(
+        lastUpdatedCell.rowName,
+        lastUpdatedCell.rowIndex,
+        lastUpdatedCell.cellIndex
+      );
+    }
+  }, [countOnes, countTwos, countThrees, countFours, countFives, countSixes]);
 
   const updateDiceCounts = (diceName, diceCount) => {
     if (diceName === "Ones") {
@@ -215,6 +256,8 @@ const YatzyBoardScreen = ({ navigation }) => {
   };
 
   const handleDiceCountChange2 = (rowName, rowIndex, cellIndex) => {
+    console.log("--Inside handleDiceCountChange2--");
+    printCounts();
     let newBoard = [...board];
     const diceCount = [
       countOnes,
@@ -244,6 +287,9 @@ const YatzyBoardScreen = ({ navigation }) => {
     newBoard = updateTotal(newBoard, startColumn, cellIndex);
 
     setBoard(newBoard);
+    resetCounts();
+    console.log("--Inside handleDiceCountChange2 after board is set--");
+    printCounts();
     Keyboard.dismiss();
     setModalVisible(false);
   };
@@ -285,6 +331,7 @@ const YatzyBoardScreen = ({ navigation }) => {
   };
 
   const getModalContent = (rowName, rowIndex, cellIndex) => {
+    setLastUpdatedCell({ rowName, rowIndex, cellIndex });
     switch (rowName) {
       case "Ones":
       case "Twos":
