@@ -6,8 +6,10 @@ import {
   Button,
   TextInput,
   Pressable,
+  TouchableOpacity,
 } from "react-native";
 import ThemeContext from "../contexts/ThemeContext";
+import BoardContext from "../contexts/BoardContext";
 import titleStyle from "../styles/titleStyle";
 import menuButtonStyle from "../styles/menuButtonStyle";
 import backButtonStyle from "../styles/backButtonStyle";
@@ -15,6 +17,7 @@ import BackButton from "../components/backButton";
 
 const SetupBoardScreen = ({ navigation }) => {
   const { theme, toggleTheme, isDarkTheme } = useContext(ThemeContext);
+  const { initialBoard, board, setBoard, addColumn } = useContext(BoardContext);
   const [players, setPlayers] = useState([]);
   const [newPlayerName, setNewPlayerName] = useState("");
 
@@ -41,7 +44,13 @@ const SetupBoardScreen = ({ navigation }) => {
 
   const addPlayer = () => {
     setPlayers([...players, newPlayerName]);
+    addColumn(newPlayerName);
     setNewPlayerName("");
+  };
+
+  const resetBoard = () => {
+    setPlayers([]); // Reset the players array
+    setBoard(initialBoard); // Reset the board to its initial state
   };
 
   return (
@@ -64,6 +73,12 @@ const SetupBoardScreen = ({ navigation }) => {
       >
         <Text style={styles.buttonText}>Start!</Text>
       </Pressable>
+      <Pressable style={styles.button} onPress={() => console.log(board)}>
+        <Text style={styles.buttonText}>Print board!</Text>
+      </Pressable>
+      <TouchableOpacity style={styles.button} onPress={resetBoard}>
+        <Text style={styles.buttonText}>Reset board!</Text>
+      </TouchableOpacity>
     </View>
   );
 };

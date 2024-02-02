@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useContext, useEffect } from "react";
+import BoardContext from "../contexts/BoardContext";
 import {
   View,
   Text,
@@ -12,6 +13,7 @@ import {
   Modal,
   Image,
 } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import backButtonStyle from "../styles/backButtonStyle";
 import BackButton from "../components/backButton";
 import Cell from "../components/Cell";
@@ -31,29 +33,10 @@ import diceThree from "../assets/images/dice_3.png";
 import diceFour from "../assets/images/dice_4.png";
 import diceFive from "../assets/images/dice_5.png";
 import diceSix from "../assets/images/dice_6.png";
+import settings_cog from "../assets/images/settings_cog.webp";
 
 const YatzyBoardScreen = ({ navigation }) => {
-  const [board, setBoard] = useState([
-    [""],
-    ["Ones"],
-    ["Twos"],
-    ["Threes"],
-    ["Fours"],
-    ["Fives"],
-    ["Sixes"],
-    ["Sum"],
-    ["Bonus"],
-    ["1 pair"],
-    ["2 pair"],
-    ["3 of a kind"],
-    ["4 of a kind"],
-    ["Small straight"],
-    ["Large straight"],
-    ["Full house"],
-    ["Chance"],
-    ["Yatzy"],
-    ["Total"],
-  ]);
+  const { board, setBoard, addColumn, removeColumn } = useContext(BoardContext);
 
   const diceImages = {
     Ones: diceOne,
@@ -67,6 +50,7 @@ const YatzyBoardScreen = ({ navigation }) => {
   const [startColumn, setStartColumn] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState(null);
+  const [settingsModalVisible, setSettingsModalVisible] = useState(false);
   const [countOnes, setCountOnes] = useState(0);
   const [countTwos, setCountTwos] = useState(0);
   const [countThrees, setCountThrees] = useState(0);
@@ -142,31 +126,6 @@ const YatzyBoardScreen = ({ navigation }) => {
     setCountSixes(0);
   };
 
-  const addColumn = () => {
-    const newBoard = board.map((row, rowIndex) => {
-      const newColumnIndex = row.length;
-      let cell = "";
-
-      if (rowIndex === 0) {
-        cell = `Player ${newColumnIndex}`;
-      } else if (rowIndex === 7 || rowIndex === 18) {
-        cell = 0;
-      } else if (rowIndex === 8) {
-        cell = "-";
-      }
-
-      return [...row, cell];
-    });
-    setBoard(newBoard);
-  };
-
-  const removeColumn = () => {
-    if (board[0].length > 2) {
-      const newBoard = board.map((row) => row.slice(0, -1));
-      setBoard(newBoard);
-    }
-  };
-
   const shiftLeft = () => {
     if (startColumn > 0) {
       setStartColumn(startColumn - 1);
@@ -180,7 +139,6 @@ const YatzyBoardScreen = ({ navigation }) => {
   };
 
   const handleCellPress = (rowIndex, cellIndex) => {
-    console.log("Cell press");
     const rowName = board[rowIndex + 1][0];
     if (rowName !== "Sum" && rowName !== "Bonus" && rowName !== "Total") {
       setModalContent(getModalContent(rowName, rowIndex, cellIndex));
@@ -540,37 +498,41 @@ const YatzyBoardScreen = ({ navigation }) => {
       <View style={styles.outerContainer}>
         <BackButton navigation={navigation} style={backButtonStyle} />
         <TouchableOpacity
-          style={{ position: "absolute", top: 30, left: 100 }}
-          onPress={addColumn}
+          style={{ position: "absolute", top: 30, right: 20, padding: 15 }}
+          onPress={() => setSettingsModalVisible(true)}
         >
-          <Text>Add Column</Text>
+          <Image source={settings_cog} style={{ width: 30, height: 30 }} />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={{ position: "absolute", top: 30, left: 180 }}
-          onPress={removeColumn}
-        >
-          <Text>Remove Column</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={{ position: "absolute", top: 30, left: 300, borderWidth: 1 }}
           onPress={resetCounts}
         >
           <Text>RESET</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         {startColumn > 0 && (
           <TouchableOpacity
-            style={{ position: "absolute", top: 60, left: 100 }}
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: 5,
+              paddingVertical: 15,
+            }}
             onPress={shiftLeft}
           >
-            <Text>Shift Left</Text>
+            <Ionicons name="arrow-back" size={24} color="black" />
           </TouchableOpacity>
         )}
         {startColumn < board[0].length - 4 && (
           <TouchableOpacity
-            style={{ position: "absolute", top: 60, left: 180 }}
+            style={{
+              position: "absolute",
+              top: "50%",
+              right: 5,
+              paddingVertical: 15,
+            }}
             onPress={shiftRight}
           >
-            <Text>Shift Right</Text>
+            <Ionicons name="arrow-forward" size={24} color="black" />
           </TouchableOpacity>
         )}
         <View style={styles.scrollViewContainer}>
@@ -627,6 +589,53 @@ const YatzyBoardScreen = ({ navigation }) => {
               </TouchableHighlight> */}
                 </View>
               </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={settingsModalVisible}
+          onRequestClose={() => {
+            setSettingsModalVisible(!settingsModalVisible);
+          }}
+        >
+          <TouchableWithoutFeedback
+            onPress={() => setSettingsModalVisible(false)}
+          >
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: "white",
+                  padding: 20,
+                  borderRadius: 10,
+                }}
+              >
+                <TouchableOpacity
+                  style={{ margin: 10 }}
+                  onPress={() => addColumn("Player")}
+                >
+                  <Text>Add Column</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ margin: 10 }}
+                  onPress={() => removeColumn()}
+                >
+                  <Text>Remove Column</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ margin: 10 }}
+                  onPress={() => setSettingsModalVisible(false)}
+                >
+                  <Text>Close</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
